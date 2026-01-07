@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sendChatMessage } from './api/chatApi';
-import type { IMessage } from './types/chat';
+import type { IMessage, IChatHistory } from './types/chat';
+import axios from 'axios';
 
 function App() {
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -20,6 +21,25 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+useEffect(() => {
+  const fetchHistory = async () => {
+    try {
+      const response = await axios.get<IChatHistory[]>('http://localhost:3000/api/chat/history');
+      // DB에서 가져온 데이터를 IMessage 형식에 맞게 변환하여 상태 업데이트
+      const historyMessages = response.data.map((item) => ({
+        id: item.id.toString(),
+        role: item.role,
+        content: item.content
+      }));
+      setMessages(historyMessages);
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    }
+  };
+
+  fetchHistory();
+}, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;

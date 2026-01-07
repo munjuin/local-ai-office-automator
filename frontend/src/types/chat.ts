@@ -22,3 +22,12 @@ export interface IMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+// 백엔드 DB에서 넘어오는 원본 데이터 구조
+export interface IChatHistory {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  model: string | null;
+  createdAt: string;
+}
