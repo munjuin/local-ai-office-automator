@@ -1,12 +1,17 @@
 {
   "dependencies": {
-    "@prisma/config": "^7.2.0"
+    "@langchain/core": "^1.1.15",
+    "@langchain/textsplitters": "^1.0.1",
+    "@prisma/config": "^7.2.0",
+    "pdf-parse-fork": "^1.2.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.9"
+    "@types/node": "^25.0.9",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.21.0"
   },
   "scripts": {
-  "studio": "DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma studio --config ./prisma.config.ts",
-  "migrate": "DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma migrate dev --config ./prisma.config.ts"
+    "studio": "cross-env DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma studio --config ./prisma.config.ts",
+    "migrate": "cross-env DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma migrate dev --config ./prisma.config.ts"
   }
 }
