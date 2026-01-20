@@ -1,12 +1,10 @@
 // backend/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  // 💡 출력 경로를 기본값(node_modules)으로 되돌리기 위해 output 줄이 있다면 삭제하세요.
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // 💡 이 줄이 반드시 있어야 P1012 에러가 사라집니다!
 }
 
 model ChatHistory {
