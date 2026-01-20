@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@prisma/config": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9"
+  }
+}
