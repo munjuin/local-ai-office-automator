@@ -14,3 +14,30 @@ model ChatHistory {
   model     String?
   createdAt DateTime @default(now())
 }
+
+// 📄 법규 원본 문서 모델
+model Document {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chunks    DocumentChunk[]
+}
+
+// 🧩 벡터 검색을 위한 문서 조각 모델
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  
+  // 💡 pgvector를 위한 특수 타입 설정 (1024차원)
+  //embedding   Unsupported("vector(1024)")?
+  
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([documentId])
+}
