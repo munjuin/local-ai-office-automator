@@ -4,5 +4,9 @@
   },
   "devDependencies": {
     "@types/node": "^25.0.9"
+  },
+  "scripts": {
+  "studio": "DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma studio --config ./prisma.config.ts",
+  "migrate": "DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma migrate dev --config ./prisma.config.ts"
   }
 }
