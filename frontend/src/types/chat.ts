@@ -8,6 +8,7 @@ export interface ChatResponseDTO {
   answer: string;
   timestamp: string;
   model: string;
+  sources?: { content: string; similarity?: number }[];
 }
 
 // 2. AI 대화 로직을 위한 기본 메시지 구조
@@ -18,9 +19,11 @@ export interface ChatMessage {
 
 // 3. React UI 상태 관리를 위한 인터페이스 (ID 포함)
 export interface IMessage {
-  id: string; // React에서 리스트 렌더링 시 key로 사용
-  role: 'user' | 'assistant';
+  id: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
+  // 👇 여기 추가! (백엔드에서 오는 참고 문서 데이터)
+  sources?: { content: string; similarity?: number }[];
 }
 
 // 백엔드 DB에서 넘어오는 원본 데이터 구조

@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "Nodenext",
-    "moduleResolution": "NodeNext", 
-    "baseUrl": ".",
-    "outDir": "./dist",
-    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
+    "strict": false,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "outDir": "./dist",
+    "rootDir": "."
   },
-  "include": [
-    "src/**/*",
-    "prisma.config.ts"
-  ]
+  "include": ["src/**/*", "retrieve.ts"],
+  "exclude": ["node_modules"]
 }
