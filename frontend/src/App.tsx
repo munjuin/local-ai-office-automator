@@ -10,10 +10,8 @@ function App() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // 자동 스크롤을 위한 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 메시지 목록이 변경될 때마다 바닥으로 스크롤
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -22,28 +20,29 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-useEffect(() => {
-  const fetchHistory = async () => {
-    try {
-      const response = await axios.get<IChatHistory[]>('http://localhost:3000/api/chat/history');
-      // DB에서 가져온 데이터를 IMessage 형식에 맞게 변환하여 상태 업데이트
-      const historyMessages = response.data.map((item) => ({
-        id: item.id.toString(),
-        role: item.role,
-        content: item.content
-      }));
-      setMessages(historyMessages);
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
-    }
-  };
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await axios.get<IChatHistory[]>('http://localhost:3000/api/chat/history');
+        const historyMessages = response.data.map((item) => ({
+          id: item.id.toString(),
+          role: item.role as 'user' | 'assistant',
+          content: item.content,
+          // DB 스키마에 sources가 없다면 과거 내역에는 sources가 없을 수 있습니다.
+        }));
+        setMessages(historyMessages);
+      } catch (error) {
+        console.error('Failed to fetch history:', error);
+      }
+    };
 
-  fetchHistory();
-}, []);
+    fetchHistory();
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // 1. 사용자 메시지 추가
     const userMessage: IMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -55,12 +54,16 @@ useEffect(() => {
     setIsLoading(true);
 
     try {
+      // 2. 백엔드로 전송 (RAG 검색 수행)
+      // sendChatMessage의 반환 타입에 sources가 포함되어야 합니다.
       const response = await sendChatMessage({ prompt: input });
 
+      // 3. AI 응답 메시지 생성 (sources 포함)
       const assistantMessage: IMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response.answer,
+        sources: response.sources, // 👈 백엔드에서 받은 출처 데이터 연결
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
@@ -82,7 +85,9 @@ useEffect(() => {
       <main style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {messages.map((msg) => (
-            <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '20px' }}>
+            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: '20px' }}>
+              
+              {/* 메시지 말풍선 */}
               <div style={{
                 maxWidth: '70%',
                 padding: '12px 16px',
@@ -91,15 +96,36 @@ useEffect(() => {
                 color: msg.role === 'user' ? '#fff' : '#333',
                 boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
               }}>
-                <strong>{msg.role === 'user' ? '나' : 'AI 전문가'}</strong>
-                {/* 마크다운 렌더링 적용 */}
+                <strong style={{ display: 'block', marginBottom: '5px' }}>{msg.role === 'user' ? '나' : 'AI 전문가'}</strong>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {msg.content}
                 </ReactMarkdown>
               </div>
+
+              {/* 💡 [추가 기능] 참고 문서 표시 (AI 응답이고, sources가 있을 때만) */}
+              {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                <div style={{ maxWidth: '70%', marginTop: '5px' }}>
+                  <details style={{ fontSize: '0.85rem', color: '#666', cursor: 'pointer' }}>
+                    <summary style={{ listStyle: 'none', backgroundColor: '#e9ecef', padding: '5px 10px', borderRadius: '5px', display: 'inline-block' }}>
+                      📚 참고 문서 ({msg.sources.length}) 보기
+                    </summary>
+                    <div style={{ marginTop: '5px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
+                      {msg.sources.map((src, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>
+                          <span style={{ fontWeight: 'bold', color: '#1a73e8' }}>[문서 {idx + 1}]</span>
+                          <p style={{ margin: '4px 0', fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>
+                            {src.content.length > 150 ? src.content.substring(0, 150) + '...' : src.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+              )}
+
             </div>
           ))}
-          {isLoading && <div style={{ textAlign: 'left', color: '#666' }}>AI가 답변을 생성하고 있습니다...</div>}
+          {isLoading && <div style={{ textAlign: 'left', color: '#666', paddingLeft: '10px' }}>AI가 관련 법령을 검색 중입니다... 🔍</div>}
           <div ref={messagesEndRef} />
         </div>
       </main>
@@ -121,7 +147,7 @@ useEffect(() => {
             style={{ padding: '0 24px', borderRadius: '8px', backgroundColor: '#1a73e8', color: '#fff', border: 'none', cursor: 'pointer' }}
             disabled={isLoading}
           >
-            전송
+            {isLoading ? '...' : '전송'}
           </button>
         </div>
       </footer>
