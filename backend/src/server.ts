@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import uploadRouter from './routes/upload.js';
 
 // 1. 환경 설정 (기존 유지)
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,7 @@ const PORT: number = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/upload', uploadRouter);
 
 // 1. 대화 내역 불러오기 (기존 기능 유지)
 app.get('/api/chat/history', async (req, res) => {
@@ -124,8 +126,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       answer,
       timestamp: new Date().toISOString(),
       model: targetModel,
-      // (선택사항) 프론트엔드에 참고한 문서 출처를 알려주고 싶다면 아래 줄 추가
-      // sources: similarDocs 
+      sources: similarDocs 
     };
     
     res.json(responseData);

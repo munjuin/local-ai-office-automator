@@ -21,4 +21,5 @@ export interface ChatResponse {
   answer: string;
   timestamp: string;
   model: string;
+  sources?: { content: string; similarity?: number }[];
 }
