@@ -1,17 +1,29 @@
 {
+  "name": "local-ai-office-automator",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "seed": "tsx backend/prisma/seed.ts"
+  },
   "dependencies": {
-    "@langchain/core": "^1.1.15",
-    "@langchain/textsplitters": "^1.0.1",
-    "@prisma/config": "^7.2.0",
-    "pdf-parse-fork": "^1.2.0"
+    "@langchain/core": "^0.3.0",
+    "@langchain/textsplitters": "^0.1.0",
+    "@prisma/client": "^6.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "ollama": "^0.5.12",
+    "pdf-parse-fork": "^1.1.10",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
-    "@types/node": "^25.0.9",
-    "cross-env": "^10.1.0",
-    "tsx": "^4.21.0"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.0",
+    "prisma": "^6.2.0",
+    "typescript": "^5.7.0"
   },
-  "scripts": {
-    "studio": "cross-env DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma studio --config ./prisma.config.ts",
-    "migrate": "cross-env DATABASE_URL=\"postgresql://postgres:1234@localhost:5432/local_ai_db?schema=public\" npx prisma migrate dev --config ./prisma.config.ts"
+  "prisma": {
+    "schema": "backend/prisma/schema.prisma"
   }
 }
