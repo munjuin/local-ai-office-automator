@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": false,
     "skipLibCheck": true,
     "outDir": "./dist",

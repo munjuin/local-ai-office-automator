@@ -1,9 +1,11 @@
+// frontend/src/App.tsx
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sendChatMessage } from './api/chatApi';
 import type { IMessage, IChatHistory } from './types/chat';
 import axios from 'axios';
+import { FileUpload } from './components/FileUpload';
 
 function App() {
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -28,7 +30,6 @@ function App() {
           id: item.id.toString(),
           role: item.role as 'user' | 'assistant',
           content: item.content,
-          // DB 스키마에 sources가 없다면 과거 내역에는 sources가 없을 수 있습니다.
         }));
         setMessages(historyMessages);
       } catch (error) {
@@ -55,7 +56,6 @@ function App() {
 
     try {
       // 2. 백엔드로 전송 (RAG 검색 수행)
-      // sendChatMessage의 반환 타입에 sources가 포함되어야 합니다.
       const response = await sendChatMessage({ prompt: input });
 
       // 3. AI 응답 메시지 생성 (sources 포함)
@@ -63,7 +63,7 @@ function App() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response.answer,
-        sources: response.sources, // 👈 백엔드에서 받은 출처 데이터 연결
+        sources: response.sources,
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
@@ -77,11 +77,17 @@ function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f0f2f5' }}>
+      
+      {/* 1. 헤더 영역 */}
       <header style={{ padding: '20px', backgroundColor: '#fff', borderBottom: '1px solid #ddd', textAlign: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#1a73e8' }}>⚡ AI 행정 비서 (전기/소방)</h1>
       </header>
 
-      {/* 대화창 영역 */}
+      {/* 👇 2. [여기 추가!] 파일 업로드 컴포넌트 배치 */}
+      {/* 헤더 바로 아래에 '도구 모음'처럼 보이도록 배치했습니다. */}
+      <FileUpload />
+
+      {/* 3. 대화창 영역 */}
       <main style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {messages.map((msg) => (
@@ -102,7 +108,7 @@ function App() {
                 </ReactMarkdown>
               </div>
 
-              {/* 💡 [추가 기능] 참고 문서 표시 (AI 응답이고, sources가 있을 때만) */}
+              {/* 참고 문서 표시 */}
               {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
                 <div style={{ maxWidth: '70%', marginTop: '5px' }}>
                   <details style={{ fontSize: '0.85rem', color: '#666', cursor: 'pointer' }}>
@@ -130,7 +136,7 @@ function App() {
         </div>
       </main>
 
-      {/* 입력창 영역 */}
+      {/* 4. 입력창 영역 */}
       <footer style={{ padding: '20px', backgroundColor: '#fff', borderTop: '1px solid #ddd' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', gap: '10px' }}>
           <input 

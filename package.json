@@ -12,13 +12,16 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
+    "multer": "^2.0.2",
     "ollama": "^0.5.12",
     "pdf-parse-fork": "^1.1.10",
+    "pdf2json": "^4.0.2",
     "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.0",
     "prisma": "^6.2.0",
     "typescript": "^5.7.0"
