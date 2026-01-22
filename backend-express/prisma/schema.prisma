@@ -1,0 +1,39 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ChatHistory {
+  id Int @id @default(autoincrement())
+  role String
+  content String
+  model String?
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id String @id @default(uuid())
+  title String
+  content String @db.Text
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chunks DocumentChunk[]
+}
+
+model DocumentChunk {
+  id String @id @default(uuid())
+  documentId String
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content String @db.Text
+  embedding Unsupported("vector(1024)")?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([documentId])
+}
