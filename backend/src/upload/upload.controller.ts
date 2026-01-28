@@ -8,6 +8,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Body } from '@nestjs/common'; // Body 데코레이터 추가 필요!
+import { SearchDto } from './dto/search.dto'; // 아까 만든 DTO import
 
 @Controller('upload')
 export class UploadController {
@@ -52,6 +54,21 @@ export class UploadController {
       id: savedData.id,
       originalName: savedData.originalName,
       textLength: parsedText.length,
+    };
+  }
+  @Post('search')
+  async search(@Body() searchDto: SearchDto) {
+    const results = await this.uploadService.search(searchDto.question);
+
+    return {
+      question: searchDto.question,
+      // 이제 results가 any가 아니므로, r.id 등에 빨간 줄이 안 생길 것입니다.
+      results: results.map((r) => ({
+        id: r.id,
+        filename: r.originalName,
+        similarity: r.similarity,
+        preview: r.content.substring(0, 200) + '...',
+      })),
     };
   }
 }
