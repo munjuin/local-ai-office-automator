@@ -3,21 +3,29 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs/promises';
 import { PdfDocument } from './pdf-document.entity';
+import { OllamaEmbeddings } from '@langchain/ollama';
 
-// ESLint를 달래기 위한 타입 정의
 interface PDFPageItem {
   str: string;
 }
 
 @Injectable()
 export class UploadService {
+  private embeddings: OllamaEmbeddings;
+
   constructor(
-    // 1. Repository 주입: 이제 DB와 대화할 수 있습니다!
     @InjectRepository(PdfDocument)
     private pdfRepository: Repository<PdfDocument>,
-  ) {}
+  ) {
+    this.embeddings = new OllamaEmbeddings({
+      model: 'nomic-embed-text',
+      baseUrl: 'http://localhost:11434',
+      // ✅ 수정: numCtx를 최상위 레벨로 이동 (라이브러리가 더 잘 인식함)
+      // (as any를 써서 타입 에러를 방지하며 강제로 주입합니다)
+      ...({ numCtx: 8192 } as any),
+    });
+  }
 
-  // 2. 파싱 로직 (기존과 동일)
   async parsePdf(filePath: string): Promise<string> {
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const dataBuffer = await fs.readFile(filePath);
@@ -46,20 +54,38 @@ export class UploadService {
     return textContents.join('\n');
   }
 
-  // 3. 저장 로직 (새로 추가됨!)
+  async getEmbedding(text: string): Promise<number[]> {
+    // ✅ 수정: 안전을 위해 1000자로 줄이고 로그를 찍어봅니다.
+    const safeText = text.substring(0, 1000);
+
+    console.log(`🔍 임베딩 시도 텍스트 길이: ${safeText.length}자`);
+
+    if (!safeText.trim()) {
+      return new Array(768).fill(0) as number[];
+    }
+
+    const vector = await this.embeddings.embedQuery(safeText);
+    return vector;
+  }
+
   async saveFile(
     filename: string,
     originalName: string,
     content: string,
   ): Promise<PdfDocument> {
-    // 엔티티 인스턴스 생성
+    console.log('🤖 Ollama에게 임베딩 생성을 요청 중...');
+
+    const embedding = await this.getEmbedding(content);
+
+    console.log(`✅ 임베딩 생성 완료! (차원수: ${embedding.length})`);
+
     const newDocument = this.pdfRepository.create({
       filename,
       originalName,
       content,
+      embedding,
     });
 
-    // DB에 저장 (INSERT)
     return await this.pdfRepository.save(newDocument);
   }
 }
