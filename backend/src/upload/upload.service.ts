@@ -9,6 +9,14 @@ interface PDFPageItem {
   str: string;
 }
 
+interface SearchResult {
+  id: number;
+  filename: string;
+  originalName: string;
+  content: string;
+  similarity: number;
+}
+
 @Injectable()
 export class UploadService {
   private embeddings: OllamaEmbeddings;
@@ -20,8 +28,7 @@ export class UploadService {
     this.embeddings = new OllamaEmbeddings({
       model: 'nomic-embed-text',
       baseUrl: 'http://localhost:11434',
-      // ✅ 수정: numCtx를 최상위 레벨로 이동 (라이브러리가 더 잘 인식함)
-      // (as any를 써서 타입 에러를 방지하며 강제로 주입합니다)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       ...({ numCtx: 8192 } as any),
     });
   }
@@ -55,9 +62,7 @@ export class UploadService {
   }
 
   async getEmbedding(text: string): Promise<number[]> {
-    // ✅ 수정: 안전을 위해 1000자로 줄이고 로그를 찍어봅니다.
     const safeText = text.substring(0, 1000);
-
     console.log(`🔍 임베딩 시도 텍스트 길이: ${safeText.length}자`);
 
     if (!safeText.trim()) {
@@ -74,9 +79,7 @@ export class UploadService {
     content: string,
   ): Promise<PdfDocument> {
     console.log('🤖 Ollama에게 임베딩 생성을 요청 중...');
-
     const embedding = await this.getEmbedding(content);
-
     console.log(`✅ 임베딩 생성 완료! (차원수: ${embedding.length})`);
 
     const newDocument = this.pdfRepository.create({
@@ -87,5 +90,29 @@ export class UploadService {
     });
 
     return await this.pdfRepository.save(newDocument);
+  }
+
+  async search(question: string): Promise<SearchResult[]> {
+    console.log(`🔎 검색 요청: "${question}"`);
+
+    const queryVector = await this.getEmbedding(question);
+
+    const results: SearchResult[] = await this.pdfRepository.query(
+      `
+      SELECT 
+        id, 
+        filename, 
+        "originalName", 
+        content, 
+        1 - (embedding <=> $1) as similarity
+      FROM pdf_document
+      ORDER BY embedding <=> $1 ASC
+      LIMIT 5
+      `,
+      [`[${queryVector.join(',')}]`],
+    );
+
+    console.log(`✅ 검색 완료: ${results.length}개의 관련 문서 발견`);
+    return results;
   }
 }
