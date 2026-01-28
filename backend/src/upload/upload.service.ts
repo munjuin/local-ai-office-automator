@@ -1,27 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as fs from 'fs/promises';
+import { PdfDocument } from './pdf-document.entity';
 
+// ESLint를 달래기 위한 타입 정의
 interface PDFPageItem {
   str: string;
 }
 
 @Injectable()
 export class UploadService {
+  constructor(
+    // 1. Repository 주입: 이제 DB와 대화할 수 있습니다!
+    @InjectRepository(PdfDocument)
+    private pdfRepository: Repository<PdfDocument>,
+  ) {}
+
+  // 2. 파싱 로직 (기존과 동일)
   async parsePdf(filePath: string): Promise<string> {
-    // ✅ 수정된 부분: 'legacy' 빌드를 명시적으로 가져옵니다.
-    // .mjs 확장자까지 정확히 적어주어야 ESM 모듈을 제대로 인식합니다.
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-
     const dataBuffer = await fs.readFile(filePath);
-
-    // Uint8Array 변환 (이건 그대로)
     const uint8Array = new Uint8Array(dataBuffer);
 
     const loadingTask = pdfjsLib.getDocument({
       data: uint8Array,
       useSystemFonts: true,
       disableFontFace: true,
-      // ✅ 추가 설정: 폰트 로딩 시 표준 폰트 데이터 경로 지정 (에러 방지용)
       standardFontDataUrl: 'node_modules/pdfjs-dist/standard_fonts/',
     });
 
@@ -32,14 +37,29 @@ export class UploadService {
     for (let i = 1; i <= maxPages; i++) {
       const page = await doc.getPage(i);
       const content = await page.getTextContent();
-
       const text = content.items
         .map((item: unknown) => (item as PDFPageItem).str)
         .join(' ');
-
       textContents.push(text);
     }
 
     return textContents.join('\n');
+  }
+
+  // 3. 저장 로직 (새로 추가됨!)
+  async saveFile(
+    filename: string,
+    originalName: string,
+    content: string,
+  ): Promise<PdfDocument> {
+    // 엔티티 인스턴스 생성
+    const newDocument = this.pdfRepository.create({
+      filename,
+      originalName,
+      content,
+    });
+
+    // DB에 저장 (INSERT)
+    return await this.pdfRepository.save(newDocument);
   }
 }
