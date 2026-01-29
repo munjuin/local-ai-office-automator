@@ -30,17 +30,20 @@ export class UploadService {
     private pdfRepository: Repository<PdfDocument>,
   ) {
     // 1. 임베딩 모델 (검색용)
+
     this.embeddings = new OllamaEmbeddings({
       model: 'nomic-embed-text',
       baseUrl: 'http://localhost:11434',
-      ...({ numCtx: 8192 } as any),
+      ...({ numCtx: 1024 } as any),
     });
 
     // 2. 채팅 모델 (생성용 - Llama 3) ✅
     this.chatModel = new ChatOllama({
       model: 'llama3', // ⚠️ 설치된 모델명이 다르다면 수정 필요 (예: 'llama3:8b')
       baseUrl: 'http://localhost:11434',
-      temperature: 0.3, // 0에 가까울수록 사실에 입각한 답변을 합니다.
+      temperature: 0.3,
+      // 0에 가까울수록 사실에 입각한 답변을 합니다.
+      ...({ numCtx: 1024, num_predict: 2048 } as any),
     });
   }
 
@@ -142,18 +145,27 @@ export class UploadService {
     const context = relevantDocs.map((doc) => doc.content).join('\n\n---\n\n');
 
     // (3) 프롬프트 템플릿 작성 (Prompt Engineering)
+    // Llama 3에게 "영어 지시문"으로 한국어 답변을 강제하는 것이 더 효과적입니다.
     const prompt = PromptTemplate.fromTemplate(`
-      당신은 친절하고 전문적인 AI 비서입니다.
-      반드시 아래 제공된 [Context]에 기반하여 [Question]에 대해 한국어로 답변하세요.
-      만약 [Context]에 정답이 없다면, 지어내지 말고 "제공된 문서에 해당 내용이 없습니다"라고 솔직하게 말하세요.
-
       [Context]
       {context}
 
       [Question]
       {question}
 
-      답변:
+      ----------------
+      
+      📢 **INSTRUCTION (지시사항)**:
+      You are a "Korean AI Translator & Assistant".
+      Read the [Context] above carefully, and answer the [Question].
+      
+      ⚠️ **CRITICAL RULES (반드시 지킬 것)**:
+      1. **Output Language:** ONLY Korean (한국어).
+      2. **Translation:** Even if the context is in English, you MUST translate the meaning into Korean.
+      3. **No English Sentences:** Do not write full sentences in English. Only use English for specific technical terms inside parentheses (e.g., "임베딩(Embedding)").
+      4. **Accuracy:** If the answer is not in the context, say "문서에 내용이 없습니다." in Korean.
+
+      **Answer in Korean:**
     `);
 
     // (4) 체인 실행 (LangChain Pipeline)
