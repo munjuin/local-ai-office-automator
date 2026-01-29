@@ -1,15 +1,16 @@
+// upload.controller.ts
 import {
   Controller,
   Post,
   UploadedFile,
   UseInterceptors,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { Body } from '@nestjs/common'; // Body 데코레이터 추가 필요!
-import { SearchDto } from './dto/search.dto'; // 아까 만든 DTO import
+import { SearchDto } from './dto/search.dto';
 
 @Controller('upload')
 export class UploadController {
@@ -21,7 +22,6 @@ export class UploadController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
-          // 한글 파일명 깨짐 방지: latin1 -> utf8 변환
           file.originalname = Buffer.from(file.originalname, 'latin1').toString(
             'utf8',
           );
@@ -35,20 +35,13 @@ export class UploadController {
   )
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     console.log('📂 파일 업로드 성공:', file.path);
-
-    // 1. PDF 파싱 (텍스트 추출)
     const parsedText = await this.uploadService.parsePdf(file.path);
-
-    // 2. DB 저장 (추가된 부분)
     const savedData = await this.uploadService.saveFile(
       file.filename,
       file.originalname,
       parsedText,
     );
-
     console.log('💾 DB 저장 완료 ID:', savedData.id);
-
-    // 3. 결과 반환
     return {
       message: 'Upload & Save Success',
       id: savedData.id,
@@ -56,19 +49,28 @@ export class UploadController {
       textLength: parsedText.length,
     };
   }
+
   @Post('search')
   async search(@Body() searchDto: SearchDto) {
     const results = await this.uploadService.search(searchDto.question);
-
     return {
       question: searchDto.question,
-      // 이제 results가 any가 아니므로, r.id 등에 빨간 줄이 안 생길 것입니다.
       results: results.map((r) => ({
         id: r.id,
         filename: r.originalName,
         similarity: r.similarity,
         preview: r.content.substring(0, 200) + '...',
       })),
+    };
+  }
+
+  // ✅ [New] 채팅 API 엔드포인트
+  @Post('chat')
+  async chat(@Body() searchDto: SearchDto) {
+    const answer = await this.uploadService.chat(searchDto.question);
+    return {
+      question: searchDto.question,
+      answer: answer,
     };
   }
 }
