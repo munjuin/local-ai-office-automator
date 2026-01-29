@@ -91,6 +91,11 @@ graph LR
 - **문제 상황:** `type: module` 환경에서 Prisma Client 및 기타 CJS 라이브러리 로드 시 `MODULE_NOT_FOUND` 에러 발생.
 - **해결:** `tsconfig.json`의 `moduleResolution`을 `NodeNext`로 설정하고, 명시적인 확장자(.js) 사용 및 일부 라이브러리는 안정적인 버전(Prisma v6)을 채택하여 환경 안정화.
 
+### 6. 단일 사용자 환경에서의 세션 관리 필요성
+* **의문점:** "로컬 1인용 앱인데 굳이 세션 관리가 필요한가?"
+* **기술적 판단:** 사용자 혼자 쓰더라도 **여러 브라우저 탭**을 열어 각기 다른 주제(예: 탭1은 인사, 탭2는 공무)로 대화할 경우, 메모리가 공유되면 대화 맥락이 섞이는 **Cross-Talk** 문제가 발생함.
+* **해결:** Frontend에서 UUID를 생성하여 요청 헤더에 포함하고, Backend는 이를 Key로 하여 대화 객체(Chat History)를 격리 저장함으로써 **멀티 탭 동시성(Concurrency)**을 지원하는 아키텍처 구현.
+
 ---
 
 ## 🚀 시작하기 (Getting Started)
