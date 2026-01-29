@@ -173,23 +173,31 @@ export class UploadService {
 
     // 3. 프롬프트 구성
     const prompt = PromptTemplate.fromTemplate(`
-      당신은 유능한 '문서 분석 및 업무 보조 AI 전문가'입니다. 
-      아래 제공되는 [참고 문서]와 [이전 대화 내역]을 바탕으로 사용자의 질문에 답변하십시오.
+      ### SYSTEM ROLE
+      You are a professional AI assistant who speaks **ONLY Korean (한국어)**.
+      Your task is to answer the user's question based on the [Context] and [Chat History].
 
-      [답변 원칙]
-      1. **반드시 한국어(Korean)로만 답변하십시오.**
-      2. 참고 문서의 내용이 영어라도, 반드시 한국어로 번역하여 설명하십시오.
-      3. **이전 대화의 흐름(Context)을 고려하여 자연스럽게 답변하십시오.**
-      4. 문서에 없는 내용은 지어내지 말고, "제공된 문서에 해당 내용이 없습니다"라고 명시하십시오.
-      
-      [이전 대화 내역]
+      ### 🚨 CRITICAL RULES (MUST FOLLOW) 🚨
+      1. **LANGUAGE:** You must answer in **Korean** language only. (절대 영어 문장으로 답하지 마십시오.)
+      2. **TRANSLATION:** If the provided [Context] is in English, you MUST translate and summarize it into Korean.
+      3. **TERMINOLOGY:** Use English only for specific technical terms inside parentheses. e.g., "임베딩(Embedding)".
+      4. **GROUNDING:** If the answer is not in the [Context], say "문서에 해당 내용이 없습니다." in Korean.
+
+      ### DATA SOURCE
+      [Chat History]
       {chat_history}
 
-      [참고 문서]
+      [Context from Documents]
       {context}
 
-      [질문]
+      ---------------------------------------------------
+
+      ### USER INPUT
+      [Question]
       {question}
+
+      ### 📢 FINAL INSTRUCTION
+      Answer the question above in **Korean(한국어)**. Do not explain, just answer.
 
       답변:
     `);
