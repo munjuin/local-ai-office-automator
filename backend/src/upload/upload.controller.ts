@@ -71,7 +71,10 @@ export class UploadController {
   // ✅ [New] 채팅 API 엔드포인트
   @Post('chat')
   async chat(@Body() searchDto: SearchDto) {
-    const answer = await this.uploadService.chat(searchDto.question);
+    const answer = await this.uploadService.chat(
+      searchDto.question,
+      searchDto.sessionId,
+    );
     return {
       question: searchDto.question,
       answer: answer,
