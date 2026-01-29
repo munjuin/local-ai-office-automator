@@ -36,17 +36,21 @@ export class UploadController {
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     console.log('📂 파일 업로드 성공:', file.path);
     const parsedText = await this.uploadService.parsePdf(file.path);
-    const savedData = await this.uploadService.saveFile(
+
+    // ✅ 반환값 변경 (savedData -> chunkCount)
+    const chunkCount = await this.uploadService.saveFile(
       file.filename,
       file.originalname,
       parsedText,
     );
-    console.log('💾 DB 저장 완료 ID:', savedData.id);
+
+    console.log(`💾 총 ${chunkCount}개의 청크로 분할 저장 완료`);
+
     return {
-      message: 'Upload & Save Success',
-      id: savedData.id,
-      originalName: savedData.originalName,
-      textLength: parsedText.length,
+      message: 'Upload & Chunking Success',
+      originalName: file.originalname,
+      chunkCount: chunkCount, // 저장된 청크 개수 반환
+      totalLength: parsedText.length,
     };
   }
 
