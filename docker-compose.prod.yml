@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # 1. 데이터베이스 (PGVector)
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: prod_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - prod_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis (캐싱)
+  redis:
+    image: redis:alpine
+    container_name: prod_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - prod_redis_data:/data
+    restart: always
+
+  # 3. 백엔드 (NestJS)
+  backend:
+    # 👇 [중요] 로컬 빌드 대신 Docker Hub에서 이미지를 가져옵니다.
+    # 'munjuin' 부분을 본인의 Docker Hub ID로 변경해주세요!
+    image: munjuin/local-ai-backend:v1.1.0 
+    container_name: prod_backend
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_DATABASE=${POSTGRES_DB}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OLLAMA_BASE_URL=http://ollama:11434
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      ollama:
+        condition: service_started
+    restart: always
+
+  # 4. AI 모델 (Ollama - GPU 버전)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: prod_ollama
+    volumes:
+      - prod_ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: always
+
+volumes:
+  prod_postgres_data:
+  prod_redis_data:
+  prod_ollama_data:
