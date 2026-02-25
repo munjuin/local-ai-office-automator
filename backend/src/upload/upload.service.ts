@@ -11,6 +11,7 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
+// 타입스크립트 안정성 확보를 위한 명세서
 interface PDFPageItem {
   str: string;
 }
@@ -29,6 +30,8 @@ interface ChatMessage {
   content: string;
 }
 
+// UploadService (RAG Core Engine)
+// 문서의 파싱, 청킹, 임베딩, 검색, AI프롬프트 조합 및 응답 생성을 모두 담당하는 핵심 비즈니스 레이어임
 @Injectable()
 export class UploadService {
   private embeddings: OllamaEmbeddings;
