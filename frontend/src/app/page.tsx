@@ -5,8 +5,8 @@ import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid'; // 👈 [New] ID 생성기
 
 // 백엔드 주소
-// const API_BASE_URL = 'http://localhost:3000';
-const API_BASE_URL = 'http://3.35.164.165:3001';
+const API_BASE_URL = 'http://localhost:3000';
+// const API_BASE_URL = 'http://3.35.164.165:3001';
 
 interface Message {
   role: 'user' | 'assistant';
